@@ -103,16 +103,40 @@ class UDE_Synced_Users_Table extends WP_List_Table {
      * Prepares the items to display in the table.
      */
     public function prepare_items() {
-      $columns  = $this->get_columns(); // Get table columns.
-      $hidden   = array(); // No hidden columns.
-      $sortable = $this->get_sortable_columns(); // Get sortable columns.
+      global $wpdb;
   
-      // Set up the column headers for the table.
-      $this->_column_headers = array( $columns, $hidden, $sortable );
+      $table_name = $wpdb->prefix . 'ude_user_data';
   
-      // Retrieve the table data.
-      $this->items = $this->get_users_data(); // Fetch users for display.
-    }
+      // Number of items to display per page.
+      $per_page = 100;
+  
+      // Get the current page number from the request.
+      $current_page = $this->get_pagenum();
+  
+      // Calculate the offset for the SQL query.
+      $offset = ( $current_page - 1 ) * $per_page;
+  
+      // Get the total number of items in the table.
+      $total_items = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+  
+      // Fetch the items for the current page.
+      $this->items = $wpdb->get_results(
+          $wpdb->prepare(
+              "SELECT * FROM $table_name LIMIT %d OFFSET %d",
+              $per_page,
+              $offset
+          ),
+          ARRAY_A
+      );
+  
+      // Set up pagination.
+      $this->set_pagination_args( array(
+          'total_items' => $total_items, // Total number of items.
+          'per_page'    => $per_page,   // Items per page.
+          'total_pages' => ceil( $total_items / $per_page ), // Total number of pages.
+      ) );
+      }
+  
 
     /**
      * Defines available bulk actions.
