@@ -58,38 +58,61 @@ add_action( 'admin_post_ude_export_csv', 'ude_handle_export_csv' );
  * Handles the Export to CSV action.
  */
 function ude_handle_export_csv() {
-  // Verify the nonce for security.
-  if ( ! isset( $_POST['ude_export_nonce'] ) || ! wp_verify_nonce( $_POST['ude_export_nonce'], 'ude_export_csv' ) ) {
-      wp_die( 'Invalid nonce. Please refresh the page and try again.' );
-  }
+    // Verify the nonce for security.
+    if ( ! isset( $_POST['ude_export_nonce'] ) || ! wp_verify_nonce( $_POST['ude_export_nonce'], 'ude_export_csv' ) ) {
+        wp_die( 'Invalid nonce. Please refresh the page and try again.' );
+    }
 
-  global $wpdb;
-  $table_name = $wpdb->prefix . 'ude_user_data';
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ude_user_data';
+    $batch_size = 1000; // Number of rows per batch.
 
-  // Fetch all columns from the table.
-  $columns = $wpdb->get_results( "SHOW COLUMNS FROM $table_name", ARRAY_A );
-  $csv_headers = array_column( $columns, 'Field' ); // Get column names as headers.
+    // Set CSV headers for download.
+    header( 'Content-Type: text/csv; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename="synced_users.csv"' );
 
-  // Query all data from the table.
-  $users = $wpdb->get_results( "SELECT * FROM $table_name", ARRAY_A );
+    // Open PHP output stream.
+    $output = fopen( 'php://output', 'w' );
 
-  // Output the CSV file.
-  header( 'Content-Type: text/csv; charset=utf-8' );
-  header( 'Content-Disposition: attachment; filename="synced_users.csv"' );
+    // Write the CSV header row.
+    $csv_headers = array( 'User ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Country', 'Last Sync' );
+    fputcsv( $output, $csv_headers );
 
-  $output = fopen( 'php://output', 'w' );
+    $offset = 0;
 
-  // Add the headers to the CSV.
-  fputcsv( $output, $csv_headers );
+    do {
+        // Fetch a batch of rows.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT user_id, first_name, last_name, email, phone, country, last_sync FROM $table_name LIMIT %d OFFSET %d",
+                $batch_size,
+                $offset
+            ),
+            ARRAY_A
+        );
 
-  // Add the data rows to the CSV.
-  foreach ( $users as $user ) {
-      fputcsv( $output, $user ); // Output all fields dynamically.
-  }
+        // Break if no more rows are available.
+        if ( empty( $rows ) ) {
+            break;
+        }
 
-  fclose( $output );
-  exit;
+        // Write each row to the CSV.
+        foreach ( $rows as $row ) {
+            fputcsv( $output, $row );
+        }
+
+        // Increment the offset for the next batch.
+        $offset += $batch_size;
+
+        // Clear memory after processing a batch.
+        unset( $rows );
+        gc_collect_cycles();
+    } while ( true );
+
+    fclose( $output );
+    exit;
 }
+
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     WP_CLI::add_command( 'ude sync_users', 'ude_sync_users_cli' );

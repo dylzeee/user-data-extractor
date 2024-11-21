@@ -23,15 +23,13 @@ class UDE_Synced_Users_Table extends WP_List_Table {
           'ajax'     => false, // Set to true if you want to enable AJAX functionality.
       ) );// Initialize columns manually.
        // Manually set column headers.
-    $this->_column_headers = array(
-      $this->get_columns(), // Columns.
-      array(), // Hidden columns.
-      array(), // Sortable columns.
-  );
+      $this->_column_headers = array(
+        $this->get_columns(), // Columns.
+        array(), // Hidden columns.
+        array(), // Sortable columns.
+      );
 
-  // Debug: Log column headers.
-  error_log( 'Column headers set in constructor: ' . print_r( $this->_column_headers, true ) );
-}
+    }
 
     /**
      * Retrieve the list of synced users.
