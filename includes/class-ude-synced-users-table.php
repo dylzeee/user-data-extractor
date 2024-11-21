@@ -177,20 +177,5 @@ class UDE_Synced_Users_Table extends WP_List_Table {
       return isset( $item[ $column_name ] ) ? esc_html( $item[ $column_name ] ) : '';
   }
 
-  public function single_row( $item ) {
-
-    echo '<tr>';
-    list( $columns, $hidden ) = $this->get_column_info();
-
-    foreach ( $columns as $column_name => $column_display_name ) {
-
-        echo '<td class="' . esc_attr( $column_name ) . '">';
-        echo $this->column_default( $item, $column_name );
-        echo '</td>';
-    }
-
-    echo '</tr>';
-}
-
 
 }
