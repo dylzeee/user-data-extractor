@@ -16,28 +16,36 @@ class UDE_Admin_UI {
         add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
     }
 
-    /**
-     * Adds the plugin's admin menu.
-     */
-    public static function add_admin_menu() {
-        add_menu_page(
-            'User Data Extractor',            // Page title.
-            'User Data Extractor',            // Menu title.
-            'manage_options',                 // Capability required to access.
-            'ude-admin-page',                 // Menu slug.
-            array( __CLASS__, 'render_admin_page' ), // Callback to render the page.
-            'dashicons-database',             // Icon for the menu.
-            80                                // Position in the admin menu.
-        );
-    }
+   /**
+ * Add menu items for the plugin.
+ */
+public static function add_admin_menu() {
+    add_menu_page(
+        'User Data Extractor', // Page title.
+        'User Data Extractor', // Menu title.
+        'manage_options',      // Capability.
+        'ude-admin-page',      // Menu slug.
+        array( 'UDE_Admin_UI', 'render_admin_page' ), // Callback.
+        'dashicons-database',  // Icon.
+        20                     // Position.
+    );
+
+    // Add a submenu for settings.
+    add_submenu_page(
+        'ude-admin-page',        // Parent slug.
+        'Settings',              // Page title.
+        'Settings',              // Menu title.
+        'manage_options',        // Capability.
+        'ude-settings-page',     // Menu slug.
+        array( 'UDE_Admin_UI', 'render_settings_page' ) // Callback.
+    );
+}
+
 
     /**
      * Renders the admin page.
      */
     public static function render_admin_page() {
-      if ( isset( $_POST['action'] ) ) {
-        error_log( 'Bulk action detected: ' . sanitize_text_field( $_POST['action'] ) );
-    }
       // Handle bulk delete action.
       if ( isset( $_POST['action'] ) && $_POST['action'] === 'delete' ) {
         if ( ! empty( $_POST['ids'] ) && is_array( $_POST['ids'] ) ) {
@@ -115,8 +123,45 @@ class UDE_Admin_UI {
       <?php
     }
   
-  
-  
+  /**
+ * Register settings for the plugin.
+ */
+public static function register_settings() {
+    // Register the batch size option.
+    register_setting( 'ude_settings', 'ude_batch_size', array(
+        'type'              => 'integer',
+        'default'           => 1000,
+        'sanitize_callback' => 'absint', // Ensure the value is an integer.
+    ) );
+}
+
+/**
+ * Render the settings form.
+ */
+public static function render_settings_page() {
+    ?>
+    <div class="wrap">
+        <h1>User Data Extractor Settings</h1>
+        <form method="post" action="options.php">
+            <?php
+            // Output settings fields and save button.
+            settings_fields( 'ude_settings' );
+            do_settings_sections( 'ude_settings' );
+            ?>
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><label for="ude_batch_size">Batch Size</label></th>
+                    <td>
+                        <input type="number" id="ude_batch_size" name="ude_batch_size" value="<?php echo esc_attr( get_option( 'ude_batch_size', 1000 ) ); ?>" min="100">
+                        <p class="description">Set the number of users processed per batch. Default is 1000.</p>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button(); ?>
+        </form>
+    </div>
+    <?php
+}
 
   
 }

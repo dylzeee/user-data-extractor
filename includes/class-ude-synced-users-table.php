@@ -17,12 +17,21 @@ class UDE_Synced_Users_Table extends WP_List_Table {
      * Constructor.
      */
     public function __construct() {
-        parent::__construct( array(
-            'singular' => 'user',   // Singular name for one item.
-            'plural'   => 'users',  // Plural name for multiple items.
-            'ajax'     => false,    // No AJAX for this table.
-        ) );
-    }
+      parent::__construct( array(
+          'singular' => 'ude_synced_user', // Singular name of the table (e.g., for one item).
+          'plural'   => 'ude_synced_users', // Plural name of the table.
+          'ajax'     => false, // Set to true if you want to enable AJAX functionality.
+      ) );// Initialize columns manually.
+       // Manually set column headers.
+    $this->_column_headers = array(
+      $this->get_columns(), // Columns.
+      array(), // Hidden columns.
+      array(), // Sortable columns.
+  );
+
+  // Debug: Log column headers.
+  error_log( 'Column headers set in constructor: ' . print_r( $this->_column_headers, true ) );
+}
 
     /**
      * Retrieve the list of synced users.
@@ -52,7 +61,7 @@ class UDE_Synced_Users_Table extends WP_List_Table {
      * @return array Column headers.
      */
     public function get_columns() {
-      return array(
+      $columns = array(
           'cb'           => '<input type="checkbox" />', // Add a checkbox for bulk selection.
           'user_id'      => 'User ID',
           'first_name'   => 'First Name',
@@ -62,7 +71,9 @@ class UDE_Synced_Users_Table extends WP_List_Table {
           'country'      => 'Country',
           'last_sync'    => 'Last Sync',
       );
-    }
+
+      return $columns;
+  }
 
     /**
      * Renders the checkbox for a single row.
@@ -129,13 +140,17 @@ class UDE_Synced_Users_Table extends WP_List_Table {
           ARRAY_A
       );
   
+      // Debug: Inspect column info from WP_List_Table.
+      list( $columns, $hidden ) = $this->get_column_info();
+      error_log( 'Columns from get_column_info: ' . print_r( $columns, true ) );
+  
       // Set up pagination.
       $this->set_pagination_args( array(
           'total_items' => $total_items, // Total number of items.
           'per_page'    => $per_page,   // Items per page.
           'total_pages' => ceil( $total_items / $per_page ), // Total number of pages.
       ) );
-      }
+  }
   
 
     /**
@@ -158,6 +173,24 @@ class UDE_Synced_Users_Table extends WP_List_Table {
      * @return string The content of the column.
      */
     public function column_default( $item, $column_name ) {
-        return isset( $item[ $column_name ] ) ? esc_html( $item[ $column_name ] ) : '';
+  
+      return isset( $item[ $column_name ] ) ? esc_html( $item[ $column_name ] ) : '';
+  }
+
+  public function single_row( $item ) {
+
+    echo '<tr>';
+    list( $columns, $hidden ) = $this->get_column_info();
+
+    foreach ( $columns as $column_name => $column_display_name ) {
+
+        echo '<td class="' . esc_attr( $column_name ) . '">';
+        echo $this->column_default( $item, $column_name );
+        echo '</td>';
     }
+
+    echo '</tr>';
+}
+
+
 }

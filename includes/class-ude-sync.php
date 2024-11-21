@@ -23,7 +23,10 @@ class UDE_Sync {
         global $wpdb;
     
         $table_name = $wpdb->prefix . 'ude_user_data';
-        $batch_size = 1000; // Process 1,000 users at a time.
+    
+        // Get the batch size from the plugin settings, defaulting to 1000.
+        $batch_size = get_option( 'ude_batch_size', 1000 );
+    
         $offset = 0;
     
         do {
@@ -33,13 +36,13 @@ class UDE_Sync {
                 'offset' => $offset,
             ) );
     
-            // Break if no more users are available.
+            // Break the loop if no more users are available.
             if ( empty( $users ) ) {
                 break;
             }
     
             foreach ( $users as $user ) {
-                // Get user details.
+                // Fetch user details.
                 $user_id    = $user->ID;
                 $first_name = get_user_meta( $user_id, 'first_name', true );
                 $last_name  = get_user_meta( $user_id, 'last_name', true );
@@ -53,13 +56,13 @@ class UDE_Sync {
                 $state            = get_user_meta( $user_id, 'billing_state', true );
                 $postal_code      = get_user_meta( $user_id, 'billing_postcode', true );
     
-                // Meta data.
+                // Prepare meta data.
                 $meta_data = json_encode( array(
                     'roles'      => $user->roles,
                     'registered' => $user->user_registered,
                 ) );
     
-                // Insert or update the user data in the database.
+                // Insert or update user data in the database.
                 $wpdb->replace(
                     $table_name,
                     array(
@@ -82,11 +85,17 @@ class UDE_Sync {
                 );
             }
     
-            // Increase the offset to process the next batch.
+            // Free memory after processing the batch.
+            unset( $users );
+            gc_collect_cycles(); // Explicitly trigger garbage collection.
+    
+            // Increase offset for the next batch.
             $offset += $batch_size;
     
         } while ( true );
-    }    
+    }
+    
+     
   
   
 

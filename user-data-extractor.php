@@ -28,6 +28,7 @@ register_activation_hook( __FILE__, array( 'UDE_Database', 'create_custom_table'
 add_action( 'plugins_loaded', 'ude_plugin_init' );
 // Handle the form submission to sync user data.
 add_action( 'admin_post_ude_sync_action', 'ude_handle_sync_request' );
+add_action( 'admin_init', array( 'UDE_Admin_UI', 'register_settings' ) );
 
 function ude_plugin_init() {
     // Load plugin files.
