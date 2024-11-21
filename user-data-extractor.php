@@ -90,4 +90,16 @@ function ude_handle_export_csv() {
   exit;
 }
 
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    WP_CLI::add_command( 'ude sync_users', 'ude_sync_users_cli' );
+}
+
+/**
+ * WP-CLI command to sync users.
+ */
+function ude_sync_users_cli() {
+    UDE_Sync::sync_users_data();
+    WP_CLI::success( 'User sync completed successfully!' );
+}
+
 
