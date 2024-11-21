@@ -65,7 +65,13 @@ function ude_handle_export_csv() {
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'ude_user_data';
-    $batch_size = 1000; // Number of rows per batch.
+
+    // Use the batch size from the settings page, default to 1000.
+    $batch_size = get_option( 'ude_batch_size', 1000 );
+
+    // Fetch all column names dynamically.
+    $columns = $wpdb->get_results( "SHOW COLUMNS FROM $table_name", ARRAY_A );
+    $csv_headers = array_column( $columns, 'Field' ); // Extract column names.
 
     // Set CSV headers for download.
     header( 'Content-Type: text/csv; charset=utf-8' );
@@ -75,16 +81,15 @@ function ude_handle_export_csv() {
     $output = fopen( 'php://output', 'w' );
 
     // Write the CSV header row.
-    $csv_headers = array( 'User ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Country', 'Last Sync' );
     fputcsv( $output, $csv_headers );
 
     $offset = 0;
 
     do {
-        // Fetch a batch of rows.
+        // Fetch a batch of rows with all columns.
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT user_id, first_name, last_name, email, phone, country, last_sync FROM $table_name LIMIT %d OFFSET %d",
+                "SELECT * FROM $table_name LIMIT %d OFFSET %d",
                 $batch_size,
                 $offset
             ),
@@ -112,6 +117,7 @@ function ude_handle_export_csv() {
     fclose( $output );
     exit;
 }
+
 
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
